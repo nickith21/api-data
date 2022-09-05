@@ -31,6 +31,7 @@ function paginate(items, pageNumber, pageSize) /* 30, 2, 10 */ {
 const useDataApi = (initialUrl, initialData) => {
   const { useState, useEffect, useReducer } = React;
   const [url, setUrl] = useState(initialUrl);
+
   // useReducer function
   const [state, dispatch] = useReducer(dataFetchReducer, {
     isLoading: false,
@@ -58,6 +59,17 @@ const useDataApi = (initialUrl, initialData) => {
       didCancel = true;
     };
   }, [url]);
+
+  useEffect(() => {
+    const fetchSelections = async () => {
+      let selectionUrl =
+        "https://www.thecocktaildb.com/api/json/v1/1/list.php?i=list";
+      let results = await axios(selectionUrl);
+      console.log("selections", results.data.drinks);
+    };
+    fetchSelections();
+  });
+
   return [state, setUrl];
 };
 const dataFetchReducer = (state, action) => {
@@ -88,13 +100,13 @@ const dataFetchReducer = (state, action) => {
 
 function App() {
   const { Fragment, useState, useEffect, useReducer } = React;
-  const [query, setQuery] = useState("MIT");
+  const [query, setQuery] = useState("Margarita");
   const [currentPage, setCurrentPage] = useState(1);
   const [numPerPage, setNumPerPage] = useState(10);
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
-    "https://hn.algolia.com/api/v1/search?query=MIT",
+    "https://www.thecocktaildb.com/api/json/v1/1/search.php?s=margarita",
     {
-      hits: [],
+      drinks: [],
     }
   );
   const handlePageChange = (e) => {
@@ -105,16 +117,37 @@ function App() {
     setCurrentPage(1);
   };
   console.log(data);
-  let page = data.hits;
+  let page = data.drinks;
+
   if (page.length >= 1) {
     page = paginate(page, currentPage, numPerPage);
-    console.log(`currentPage: ${currentPage}`);
   }
+
+  const ingredients = data.drinks.map((item) => {
+    var keys = Object.keys(item);
+    const strIngredientKeys = keys
+      .filter((key) => {
+        return key.includes("strIngredient");
+      })
+      .filter((key) => {
+        return item[key] !== null;
+      })
+      .map((key, i) => {
+        const theNum = key.match(/\d+/)[0];
+        return `${
+          item["strMeasure" + theNum] == null ? "" : item["strMeasure" + theNum]
+        } ${item[key]}`;
+      });
+    return strIngredientKeys;
+  });
+
   return (
     <Fragment>
       <form
         onSubmit={(event) => {
-          doFetch(`http://hn.algolia.com/api/v1/search?query=${query}`);
+          doFetch(
+            `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${query}`
+          );
           event.preventDefault();
         }}
       >
@@ -143,16 +176,23 @@ function App() {
         <div>Loading ...</div>
       ) : (
         <ul>
-          {page.map((item) => (
-            <li key={item.objectID}>
-              <a href={item.url}>{item.title}</a>
-            </li>
+          {page.map((item, i) => (
+            <>
+              <li key={item.idDrink}>
+                <a href={item.strDrinkThumb}>{item.strDrink}</a>
+                <ul>
+                  {ingredients[i].map((ingredient) => {
+                    return <li>{ingredient}</li>;
+                  })}
+                </ul>
+              </li>
+            </>
           ))}
         </ul>
       )}
 
       <Pagination
-        items={data.hits} // data we've retrieved
+        items={data.drinks} // data we've retrieved
         pageSize={numPerPage} // this is defined above in the App to be 10
         onPageChange={handlePageChange}
       ></Pagination>
