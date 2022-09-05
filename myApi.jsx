@@ -99,6 +99,7 @@ const dataFetchReducer = (state, action) => {
 };
 
 function App() {
+  const { ListGroup, Card } = ReactBootstrap;
   const { Fragment, useState, useEffect, useReducer } = React;
   const [query, setQuery] = useState("Margarita");
   const [currentPage, setCurrentPage] = useState(1);
@@ -140,7 +141,7 @@ function App() {
       });
     return strIngredientKeys;
   });
-
+  const handleSelect = (eventKey) => alert(`selected ${eventKey}`);
   return (
     <Fragment>
       <form
@@ -175,20 +176,34 @@ function App() {
       {isLoading ? (
         <div>Loading ...</div>
       ) : (
-        <ul>
+        <ListGroup>
           {page.map((item, i) => (
             <>
-              <li key={item.idDrink}>
-                <a href={item.strDrinkThumb}>{item.strDrink}</a>
-                <ul>
-                  {ingredients[i].map((ingredient) => {
-                    return <li>{ingredient}</li>;
-                  })}
-                </ul>
-              </li>
+              <Card>
+                <Card.Body>
+                  <ListGroup.Item variant="primary" key={item.idDrink}>
+                    <Card.Title>{item.strDrink}</Card.Title>
+                    <Card.Subtitle className="mb-2 text-muted">
+                      <ListGroup>
+                        {ingredients[i].map((ingredient) => {
+                          return <ListGroup.Item>{ingredient}</ListGroup.Item>;
+                        })}
+                      </ListGroup>
+                    </Card.Subtitle>
+                    <ListGroup>
+                      <Card.Text>
+                        <ListGroup.Item variant="secondary">
+                          {item.strInstructions}
+                        </ListGroup.Item>
+                      </Card.Text>
+                    </ListGroup>
+                    <p></p>
+                  </ListGroup.Item>
+                </Card.Body>
+              </Card>
             </>
           ))}
-        </ul>
+        </ListGroup>
       )}
 
       <Pagination
